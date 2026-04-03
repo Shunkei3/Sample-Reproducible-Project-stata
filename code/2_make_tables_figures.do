@@ -44,20 +44,21 @@ esttab using "results/tables/summary_stats.tex", replace ///
         temp        "Temperature" ///
         precip      "Precipitation" ///
         wind_speed  "Wind Speed" ///
-    )
+    ) ///
+	alignment(r r r) ///
+    nomtitle nonumber
 
 *-----------------------------*
 * Make figure
 * Distribution of departure delay by carrier,separately for each origin
 *-----------------------------*
 graph box dep_delay, ///
-    over(carrier, label(angle(45))) ///
-    by(origin, cols(1) note("")) ///
+    over(carrier, label(labsize(small))) ///
+    by(origin, cols(1) note("") compact) ///
     ytitle("Departure Delay") ///
-    title("") ///
-    caption("Note: The figure shows the distribution of departure delay by carrier for each of the airports.")
+    title("")
 
-graph export "results/figures/delay_box.png", replace width(2400)
+graph export "results/figures/delay_box.png", replace
 
 
 *-----------------------------*
