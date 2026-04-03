@@ -2,9 +2,8 @@
       name:  <unnamed>
        log:  /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/code/main.log
   log type:  text
- opened on:   2 Apr 2026, 17:57:36
+ opened on:   2 Apr 2026, 22:17:38
 
-. 
 . 
 . *-----------------------------*
 . * Reproducing the results
@@ -44,7 +43,7 @@ dep_delay: characters N A removed; replaced as int
 . tempfile flights
 
 . save `flights'
-file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_85661.000001 saved as .dta format
+file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_57947.000001 saved as .dta format
 
 . 
 . 
@@ -77,7 +76,7 @@ precip already numeric; no replace
 . tempfile weather_daily
 
 . save `weather_daily'
-file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_85661.000002 saved as .dta format
+file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_57947.000002 saved as .dta format
 
 . 
 . 
@@ -296,6 +295,7 @@ end of do-file
 . if _rc ssc install estout
 
 . 
+. 
 . *-----------------------------*
 . * Load processed data
 . *-----------------------------*
@@ -304,18 +304,48 @@ end of do-file
 . 
 . 
 . *-----------------------------*
+. * Create summary statistics table
+. *-----------------------------*
+. estpost summarize dep_delay temp precip wind_speed
+
+             |  e(count)   e(sum_w)    e(mean)     e(Var)      e(sd)     e(min)     e(max)     e(sum) 
+-------------+----------------------------------------------------------------------------------------
+   dep_delay |    328521     328521   12.63907   1616.849   40.21006        -43       1301    4152200 
+        temp |    336000     336000   55.59129   292.5712   17.10471     15.455    92.1425   1.87e+07 
+      precip |    336000     336000   .0045782   .0001767   .0132925          0   .1545833   1538.272 
+  wind_speed |    336000     336000   10.45292   17.55785   4.190209   2.637204   56.38822    3512179 
+
+. 
+. //esttab, cells("mean sd max") label
+. 
+. * save the table as .tex (for PDF)
+. esttab using "results/tables/summary_stats.tex", replace ///
+>         cells("mean(fmt(2)) sd(fmt(2)) max(fmt(2))") ///
+>         collabels("Mean" "SD" "Max") ///
+>     label ///
+>     varlabels( ///
+>         dep_delay   "Departure Delay" ///
+>         temp        "Temperature" ///
+>         precip      "Precipitation" ///
+>         wind_speed  "Wind Speed" ///
+>     ) ///
+>         alignment(r r r) ///
+>     nomtitle nonumber
+(output written to results/tables/summary_stats.tex)
+
+. 
+. *-----------------------------*
 . * Make figure
 . * Distribution of departure delay by carrier,separately for each origin
 . *-----------------------------*
 . graph box dep_delay, ///
->     over(carrier, label(angle(45))) ///
->     by(origin, cols(1) note("")) ///
+>     over(carrier, label(labsize(small))) ///
+>     by(origin, cols(1) note("") compact) ///
 >     ytitle("Departure Delay") ///
->     title("") ///
->     caption("Note: The figure shows the distribution of departure delay by carrier for each of the airports.")
+>     title("")
 
 . 
-. graph export "results/figures/delay_box.png", replace width(2400)
+. graph export "results/figures/delay_box.png", replace
 file /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/results/figures/delay_box.png saved as PNG format
 
 . 
@@ -341,21 +371,6 @@ file /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible
 . estimates use "results/reg_results_3.ster"
 
 . estimates store reg_results_3
-
-. 
-. * Make table (save as .txt)
-. esttab reg_results_1 reg_results_2 reg_results_3 ///
->     using "results/tables/reg_table.html", replace ///
->     se label ///
->         mtitle("Model 1" "Model 2" "Model 3") ///
->     varlabels( ///
->         temp "Temperature" ///
->         precip "Precipitation" ///
->         wind_speed "Wind Speed" ///
->     ) ///
->     drop(_cons) ///
->     stats(N r2, labels("Observations" "R-squared"))
-(output written to results/tables/reg_table.html)
 
 . 
 . 
@@ -388,5 +403,5 @@ end of do-file
       name:  <unnamed>
        log:  /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/code/main.log
   log type:  text
- closed on:   2 Apr 2026, 17:58:20
+ closed on:   2 Apr 2026, 22:18:19
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

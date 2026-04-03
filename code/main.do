@@ -19,18 +19,11 @@ This do file creates the dataset used for the analysis and reproduces the main r
 
 */
 
-// Set Stata version for reproducibility
-// The original results were produced under Stata 18
-version 18
+
+// The original results were produced under Stata 19.5
 
 clear all
 set more off
-
-*-----------------------------*
-* Set project root
-*-----------------------------*
-// You need to change the path below to the location where you have saved the project on your computer.
-cd "~/Dropbox/git/Sample-Reproducible-Project-stata"
 
 *-----------------------------*
 * Start log
