@@ -1,0 +1,392 @@
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/code/main.log
+  log type:  text
+ opened on:   2 Apr 2026, 17:57:36
+
+. 
+. 
+. *-----------------------------*
+. * Reproducing the results
+. *-----------------------------*
+. // 1. Run the data processing script
+. do code/0_process_data.do
+
+. ****************************************************
+. * 0_process_data.do
+. ****************************************************
+. 
+. /* Objective:
+> + Read raw datasets and process them for analysis.
+> */
+. 
+. 
+. clear all
+
+. set more off
+
+. 
+. 
+. *-----------------------------*
+. * Read flights data
+. *-----------------------------*
+. import delimited "data/raw/flights.csv", clear
+(encoding automatically selected: ISO-8859-2)
+(19 vars, 336,776 obs)
+
+. 
+. * Convert variables to numeric if needed
+. destring dep_delay, replace ignore("NA")
+dep_delay: characters N A removed; replaced as int
+(8255 missing values generated)
+
+. 
+. tempfile flights
+
+. save `flights'
+file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_85661.000001 saved as .dta format
+
+. 
+. 
+. *-----------------------------*
+. * Read weather data
+. *-----------------------------*
+. import delimited "data/raw/weather.csv", clear
+(encoding automatically selected: ISO-8859-2)
+(15 vars, 26,115 obs)
+
+. 
+. * Convert weather variables to numeric if needed
+. destring wind_speed temp precip, replace ignore("NA")
+wind_speed: characters N A removed; replaced as double
+(4 missing values generated)
+temp: characters N A removed; replaced as double
+(1 missing value generated)
+precip already numeric; no replace
+
+. 
+. 
+. *-----------------------------*
+. * Aggregate weather data (hourly -> daily)
+. *-----------------------------*
+. collapse ///
+>     (mean) wind_speed temp precip, ///
+>     by(month day origin)
+
+. 
+. tempfile weather_daily
+
+. save `weather_daily'
+file /var/folders/72/4x3sf7c13v54mk99s9wvt54c0000gn/T//S_85661.000002 saved as .dta format
+
+. 
+. 
+. *-----------------------------*
+. * Merge datasets
+. *-----------------------------*
+. use `flights', clear
+
+. 
+. merge m:1 month day origin using `weather_daily'
+
+    Result                      Number of obs
+    -----------------------------------------
+    Not matched                           776
+        from master                       776  (_merge==1)
+        from using                          0  (_merge==2)
+
+    Matched                           336,000  (_merge==3)
+    -----------------------------------------
+
+. 
+. * Keep all flights (left join equivalent)
+. keep if _merge == 1 | _merge == 3
+(0 observations deleted)
+
+. drop _merge
+
+. 
+. 
+. *-----------------------------*
+. * Save processed data
+. *-----------------------------*
+. save "data/processed/reg_data.dta", replace
+file data/processed/reg_data.dta saved
+
+. 
+end of do-file
+
+. 
+. // 2. Run the regression analysis script
+. do code/1_reg_analysis.do
+
+. ****************************************************
+. * 1_reg_analysis.do
+. ****************************************************
+. 
+. /* Objective:
+> + Run regression analyses and save the results.
+> */
+. 
+. 
+. clear all
+
+. set more off
+
+. 
+. * Define project root (adjust the path as needed)
+. //cd "~/Dropbox/git/Sample-Reproducible-Project-stata"
+. 
+. 
+. *-----------------------------*
+. * Install package if missing
+. *-----------------------------*
+. cap which reghdfe
+
+. if _rc ssc install reghdfe
+
+. 
+. * also install dependency if missing
+. cap which ftools
+
+. if _rc ssc install ftools
+
+. 
+. 
+. *-----------------------------*
+. * Load analysis-ready data
+. *-----------------------------*
+. use "data/processed/reg_data.dta", clear
+
+. 
+. 
+. *-----------------------------*
+. * Regression analysis
+. *-----------------------------*
+. * Model 1: no fixed effects
+. reg dep_delay temp precip wind_speed
+
+      Source |       SS           df       MS      Number of obs   =   327,761
+-------------+----------------------------------   F(3, 327757)    =   2206.88
+       Model |    10506165         3     3502055   Prob > F        =    0.0000
+    Residual |   520112335   327,757  1586.88399   R-squared       =    0.0198
+-------------+----------------------------------   Adj R-squared   =    0.0198
+       Total |   530618500   327,760  1618.92391   Root MSE        =    39.836
+
+------------------------------------------------------------------------------
+   dep_delay | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        temp |   .1452934   .0042818    33.93   0.000     .1369012    .1536856
+      precip |   380.9274   5.358772    71.08   0.000     370.4243    391.4304
+  wind_speed |   .2694527   .0175572    15.35   0.000      .235041    .3038644
+       _cons |   .1031529   .3467189     0.30   0.766    -.5764061     .782712
+------------------------------------------------------------------------------
+
+. estimates store reg_results_1
+
+. estimates save "results/reg_results_1", replace
+file results/reg_results_1.ster saved
+
+. 
+. * Model 2: two-way fixed effects
+. reghdfe dep_delay temp precip wind_speed, absorb(month origin)
+(MWFE estimator converged in 3 iterations)
+
+HDFE Linear regression                            Number of obs   =    327,761
+Absorbing 2 HDFE groups                           F(   3, 327744) =    1726.22
+                                                  Prob > F        =     0.0000
+                                                  R-squared       =     0.0336
+                                                  Adj R-squared   =     0.0335
+                                                  Within R-sq.    =     0.0156
+                                                  Root MSE        =    39.5555
+
+------------------------------------------------------------------------------
+   dep_delay | Coefficient  Std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        temp |   .2504303   .0099897    25.07   0.000     .2308508    .2700099
+      precip |   350.5564    5.43447    64.51   0.000      339.905    361.2078
+  wind_speed |   .3203211   .0183027    17.50   0.000     .2844484    .3561938
+       _cons |  -6.140851   .6223545    -9.87   0.000    -7.360647   -4.921054
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+       month |        12           0          12     |
+      origin |         3           1           2     |
+-----------------------------------------------------+
+
+. estimates store reg_results_2
+
+. estimates save "results/reg_results_2", replace
+file results/reg_results_2.ster saved
+
+. 
+. * Model 3: two-way fixed effects with clustering by origin
+. reghdfe dep_delay temp precip wind_speed, absorb(month origin) vce(cluster origin)
+(MWFE estimator converged in 3 iterations)
+warning: missing F statistic; dropped variables due to collinearity or too few clusters
+
+HDFE Linear regression                            Number of obs   =    327,761
+Absorbing 2 HDFE groups                           F(   3,      2) =          .
+Statistics robust to heteroskedasticity           Prob > F        =          .
+                                                  R-squared       =     0.0336
+                                                  Adj R-squared   =     0.0335
+                                                  Within R-sq.    =     0.0156
+Number of clusters (origin)  =          3         Root MSE        =    39.5555
+
+                                 (Std. err. adjusted for 3 clusters in origin)
+------------------------------------------------------------------------------
+             |               Robust
+   dep_delay | Coefficient  std. err.      t    P>|t|     [95% conf. interval]
+-------------+----------------------------------------------------------------
+        temp |   .2504303   .0230489    10.87   0.008     .1512587    .3496019
+      precip |   350.5564   28.04214    12.50   0.006     229.9008    471.2119
+  wind_speed |   .3203211    .056433     5.68   0.030     .0775095    .5631328
+       _cons |  -6.140851   1.824227    -3.37   0.078    -13.98987    1.708166
+------------------------------------------------------------------------------
+
+Absorbed degrees of freedom:
+-----------------------------------------------------+
+ Absorbed FE | Categories  - Redundant  = Num. Coefs |
+-------------+---------------------------------------|
+       month |        12           1          11     |
+      origin |         3           3           0    *|
+-----------------------------------------------------+
+* = FE nested within cluster; treated as redundant for DoF computation
+
+. estimates store reg_results_3
+
+. estimates save "results/reg_results_3", replace
+file results/reg_results_3.ster saved
+
+. 
+. 
+. 
+end of do-file
+
+. 
+. // 3. Run the script to create tables and figures
+. do code/2_make_tables_figures.do
+
+. ****************************************************
+. * 2_make_tables_figures.do
+. ****************************************************
+. 
+. /* Objective
+> Create figures and tables for manuscript
+> */
+. 
+. 
+. clear all
+
+. set more off
+
+. 
+. * Define project root (adjust the path as needed)
+. //cd "~/Dropbox/git/Sample-Reproducible-Project-stata"
+. 
+. 
+. *-----------------------------*
+. * Install packages if missing
+. *-----------------------------*
+. cap which esttab
+
+. if _rc ssc install estout
+
+. 
+. *-----------------------------*
+. * Load processed data
+. *-----------------------------*
+. use "data/processed/reg_data.dta", clear
+
+. 
+. 
+. *-----------------------------*
+. * Make figure
+. * Distribution of departure delay by carrier,separately for each origin
+. *-----------------------------*
+. graph box dep_delay, ///
+>     over(carrier, label(angle(45))) ///
+>     by(origin, cols(1) note("")) ///
+>     ytitle("Departure Delay") ///
+>     title("") ///
+>     caption("Note: The figure shows the distribution of departure delay by carrier for each of the airports.")
+
+. 
+. graph export "results/figures/delay_box.png", replace width(2400)
+file /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/results/figures/delay_box.png saved as PNG format
+
+. 
+. 
+. *-----------------------------*
+. * Create regression table
+. *-----------------------------*
+. * Load regression results
+. 
+. * Model 1: no fixed effects
+. estimates use "results/reg_results_1.ster"
+
+. estimates store reg_results_1
+
+. 
+. * Model 2: two-way fixed effects
+. estimates use "results/reg_results_2.ster"
+
+. estimates store reg_results_2
+
+. 
+. * Model 3: two-way fixed effects with clustering by origin
+. estimates use "results/reg_results_3.ster"
+
+. estimates store reg_results_3
+
+. 
+. * Make table (save as .txt)
+. esttab reg_results_1 reg_results_2 reg_results_3 ///
+>     using "results/tables/reg_table.html", replace ///
+>     se label ///
+>         mtitle("Model 1" "Model 2" "Model 3") ///
+>     varlabels( ///
+>         temp "Temperature" ///
+>         precip "Precipitation" ///
+>         wind_speed "Wind Speed" ///
+>     ) ///
+>     drop(_cons) ///
+>     stats(N r2, labels("Observations" "R-squared"))
+(output written to results/tables/reg_table.html)
+
+. 
+. 
+. * Make table (save as .tex)
+. esttab reg_results_1 reg_results_2 reg_results_3 ///
+>     using "results/tables/reg_table.tex", replace ///
+>     star(* 0.10 ** 0.05 *** 0.01) ///
+>     se ///
+>         label ///
+>     mtitle("Model 1" "Model 2" "Model 3") ///
+>     varlabels( ///
+>         temp "Temperature" ///
+>         precip "Precipitation" ///
+>         wind_speed "Wind Speed" ///
+>     ) ///
+>     drop(_cons) ///
+>     stats(N r2, labels("Observations" "R-squared"))
+(output written to results/tables/reg_table.tex)
+
+. 
+. 
+. 
+end of do-file
+
+. 
+. *-----------------------------*
+. * End log
+. *-----------------------------*
+. log close
+      name:  <unnamed>
+       log:  /Users/shunkeikakimoto/Library/CloudStorage/Dropbox/git/Sample-Reproducible-Project-stata/code/main.log
+  log type:  text
+ closed on:   2 Apr 2026, 17:58:20
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

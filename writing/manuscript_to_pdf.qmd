@@ -1,0 +1,94 @@
+---
+title: The Impact of Weather on Flight Delay
+author:
+  - name: MyName
+    email: johndoe@corps.com
+    affiliations:
+      - Random University
+  - name: No Name
+    affiliations:
+      - Highest-ranked University
+date: "`r Sys.Date()`"
+abstract: |
+  This is a sample article for illustrating how to write a reproducible research article using R and Quarto. `preamble.tex` is used to set up the LaTeX environment, such as packages and custom commands. `title.tex` (in the template folder) is used to customize the title page. `american-journal-of-agricultural-economics.csl` is the citation style for AJAE. It can be downloaded from https://github.com/citation-style-language/styles. The `template` folder contains these three files. `bibliography.bib` is the bibliography file
+bibliography: bibliography.bib
+csl: ./template/american-journal-of-agricultural-economics.csl 
+
+format: 
+  pdf:
+    number-sections: true
+    keep-tex: false # set to true if you want to keep the intermediate .tex file
+    fontfamily: times
+    tbl-cap-location: top
+    include-in-header: 
+      - ./template/preamble.tex # preamble.tex is used to set up the LaTeX environment, such as packages and custom commands
+    template-partials: 
+      - ./template/title.tex # title.tex is used to customize the title page
+
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+
+# Introduction
+
+Nothing is more frustrating than flight delays. The goal of this article is to understand what weather variables affect flights delays so that we can control weather when such time comes in the future[^1].
+
+[^1]: This is just for illustrating how to create a footnote
+
+# Method
+
+Regression analysis was used in this article. The econometric model writes as follows (Equation \ref{econometric-model}):
+
+\begin{align}
+y_{i,t} = \beta_0 + \beta_1 temp_{i,t} + \beta_2 precip_{i,t} + \beta_3 wind_speed_{i,t} + v_{i,t} \label{econometric-model}
+\end{align}
+
+## Code availability
+
+All computations (including creating tables and plots) were conducted using R software [@R], The @fixest package was used to run regressions.
+
+# Data
+
+We use publicly available datasets from the R `nycflights13` package [@nycflights13]. @tbl-sum-stat presents the summary statistics.
+
+:::{#tbl-sum-stat}
+```{=latex}
+\input{../results/tables/summary_stats.tex}
+```
+Summary Statistics 
+:::
+
+@fig-hist-delay shows the histogram of departure delay by carrier for each of the airports. 
+
+```{r}
+#| label: fig-hist-delay
+#| fig-cap: Distribution of delay by carrier
+#| out-width: "100%"
+
+knitr::include_graphics("../results/figures/delay_box.png")
+```
+
+# Results and Discussions
+
+@tbl-reg-results presents the regression results.
+
+:::{#tbl-reg-results}
+```{=latex}
+\input{../results/tables/reg_table.tex}
+```
+Regression Results
+:::
+
+# Conclusion
+
+Weather matters.
+
+\newpage
+
+# References {-}
+
+::: {#refs}
+:::
