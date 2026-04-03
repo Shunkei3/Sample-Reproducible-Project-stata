@@ -1,6 +1,6 @@
 # Sample Reproducible Project with Stata code
 
-> NOTE: This is a sample project for demonstration purposes. The data and code are not intended for actual research use.
+> NOTE: This sample project was created for the Reproducibility Workshop at the APEC Student Seminar for demonstration purposes. The data and code are not intended for actual research use.
 
 
 ## Overview
@@ -30,7 +30,7 @@ Sample-Reproducible-Project-stata/
 
 + Stata (tested on Stata 19.5)
 + Quarto CLI (https://quarto.org/docs/get-started/)
-+ LaTeX (TinyTeX recommended, run `quarto install tinytex` if you don't have LaTeX installed)
++ LaTeX (any distribution; TinyTeX can be installed via `quarto install tinytex` in the terminal if needed)
 
 <br>
 
