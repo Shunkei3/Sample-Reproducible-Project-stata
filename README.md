@@ -7,7 +7,7 @@
 This repository contains the full code for the research project: **"The Impact of Weather on Flight Delay"**. All results are generated using Stata, and and the manuscript is compiled using Quarto.
 
 
-# Project Structure
+## Project Structure
 
 The main structure of the project is as follows:
 
@@ -24,9 +24,9 @@ Sample-Reproducible-Project-stata/
 ├─ README.md
 ```
 
-# How to Reproduce the Project
+## How to Reproduce the Project
 
-## Requirements:
+### Requirements:
 
 + Stata (tested on Stata 19.5)
 + Quarto CLI (https://quarto.org/docs/get-started/)
@@ -42,7 +42,7 @@ Stata packages:
 All required packages will be installed automatically (if missing) when running the code.
 
 
-## Steps to Reproduce:
+### Steps to Reproduce:
 
 **Step 1.** Clone the repository to your local machine (or download and extract the ZIP file).
 
